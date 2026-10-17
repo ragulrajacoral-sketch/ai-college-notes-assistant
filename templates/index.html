@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Upload and search your college lecture notes.">
+    <title>NoteNest | College Notes Assistant</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<header class="topbar">
+    <a class="brand" href="{{ url_for('index') }}">📚 NoteNest</a>
+    <span class="tagline">Your notes, easier to search</span>
+</header>
+<main class="page">
+    <section class="hero">
+        <p class="eyebrow">STUDY SMARTER</p>
+        <h1>Your college notes.<br><span>One searchable library.</span></h1>
+        <p class="hero-copy">Upload text-based PDFs, TXT, or Markdown notes, then search for the concepts you need.</p>
+    </section>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="messages" role="status">
+          {% for category, message in messages %}
+            <p class="message {{ category }}">{{ message }}</p>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <section class="panel upload-panel">
+        <div>
+            <p class="eyebrow">STEP 1</p>
+            <h2>Add your notes</h2>
+            <p class="muted">PDF, TXT, or MD · Maximum 10 MB per file</p>
+        </div>
+        <form action="{{ url_for('upload') }}" method="post" enctype="multipart/form-data">
+            <label for="document">Choose a notes file</label>
+            <input id="document" name="document" type="file" accept=".pdf,.txt,.md" required>
+            <button type="submit">Upload notes</button>
+        </form>
+    </section>
+
+    <section class="search-section">
+        <div class="section-title">
+            <div><p class="eyebrow">STEP 2</p><h2>Search your library</h2></div>
+            <span class="count">{{ documents|length }} document{{ '' if documents|length == 1 else 's' }}</span>
+        </div>
+        <form class="search-form" action="{{ url_for('index') }}" method="get">
+            <label class="visually-hidden" for="q">Search notes</label>
+            <input id="q" name="q" value="{{ query }}" placeholder="Try: inheritance, neural networks, database..." required>
+            <button type="submit">Search</button>
+            {% if query %}<a class="clear-link" href="{{ url_for('index') }}">Clear</a>{% endif %}
+        </form>
+
+        {% if query %}
+            <h3 class="results-heading">Results for “{{ query }}”</h3>
+            {% if results %}
+                <div class="results-list">
+                {% for result in results %}
+                    <article class="result-card">
+                        <div class="result-meta">
+                            <span>📄</span><strong>{{ result.filename }}</strong>
+                            <span class="chunk-label">Section {{ result.chunk_number }}</span>
+                        </div>
+                        <p>{{ result.chunk }}</p>
+                        <div class="matched">Matched terms: {{ result.matched_terms|join(', ') }}</div>
+                    </article>
+                {% endfor %}
+                </div>
+                <p class="notice">Results show relevant excerpts. This starter uses keyword matching; it does not generate AI answers.</p>
+            {% else %}
+                <div class="empty-state"><span>🔎</span><h3>No matching text found</h3><p>Try different keywords or upload notes containing that topic.</p></div>
+            {% endif %}
+        {% else %}
+            <div class="hint"><span>💡</span><p><strong>Search tip:</strong> Use a few specific keywords. Results show matching sections from your notes.</p></div>
+        {% endif %}
+    </section>
+
+    <section class="library-section">
+        <div class="section-title"><div><p class="eyebrow">YOUR COLLECTION</p><h2>Uploaded notes</h2></div></div>
+        {% if documents %}
+            <div class="documents-list">
+            {% for doc in documents %}
+                <article class="document-row">
+                    <div class="document-icon">📘</div>
+                    <div class="document-details">
+                        <strong>{{ doc.filename }}</strong>
+                        <span>{{ doc.characters }} characters · Added {{ doc.uploaded_at }}</span>
+                    </div>
+                    <form action="{{ url_for('delete_document', document_id=doc.id) }}" method="post" onsubmit="return confirm('Delete this document and its indexed text?');">
+                        <button class="delete-button" type="submit">Delete</button>
+                    </form>
+                </article>
+            {% endfor %}
+            </div>
+        {% else %}
+            <div class="empty-state"><span>📂</span><h3>Your library is empty</h3><p>Upload your first set of notes to get started.</p></div>
+        {% endif %}
+    </section>
+</main>
+<footer><strong>NoteNest</strong><span>Built for students with Flask, SQLite, and Python.</span></footer>
+</body>
+</html>
